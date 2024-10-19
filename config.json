@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "app": {
+    "version": "0.1.0",
+    "run": {
+      "command": ["bash", "run.sh"],
+      "interval": "3"
+    },
+    "env": {},
+    "platforms": ["linux", "darwin"],
+    "pre_install": ["echo", "Hello World"],
+    "post_install": [],
+    "pre_update": [],
+    "post_update": []
+  }
+}

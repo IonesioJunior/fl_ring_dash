@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="refresh" content="5">
+        <title>SyftBox Federated Learning!</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap'); body {
+                font-family: 'VT323', monospace;
+                background-color: #000;
+                color: #00ffff;
+                padding: 10px;
+                font-size: 14px;
+                line-height: 1.2;
+                background-image: linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+                background-size: 20px 20px;
+                animation: matrix-bg 30s linear infinite;
+                margin: 0;
+            }
+
+            @keyframes matrix-bg {
+                0% {
+                    background-position: 0 0;
+                }
+
+                100% {
+                    background-position: 20px 20px;
+                }
+            }
+
+            #ascii-title {
+                font-size: 12px;
+                text-align: center;
+                white-space: pre;
+                margin-bottom: 20px;
+                color: #ff00ff;
+                text-shadow: 0 0 5px #ff00ff;
+            }
+
+            #stats-header {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 20px;
+                flex-direction: column;
+                padding-top: 20px;
+                /* Reduced padding since we removed the navigation */
+            }
+
+            #stats-header h1 {
+                font-size: 36px;
+                /* Reduced font size */
+                margin-bottom: 10px;
+                text-shadow: 0 0 10px #00ffff;
+                text-align: center;
+            }
+
+            .datasite-count {
+                font-size: 28px;
+                /* Reduced font size */
+                font-weight: bold;
+                color: #ff00ff;
+                margin: 5px 0;
+                text-shadow: 0 0 10px #ff00ff;
+            }
+
+            #stats-display {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                /* Reduced minimum width */
+                gap: 10px;
+            }
+
+            .user-box {
+                border: 1px solid #00ffff;
+                padding: 8px;
+                /* Reduced padding */
+                font-size: 11px;
+                /* Reduced font size */
+                white-space: normal;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                line-height: 1.2;
+                background-color: rgba(0, 0, 0, 0.7);
+                box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+                transition: all 0.3s ease;
+            }
+
+            .user-box:hover {
+                transform: scale(1.05);
+                box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            }
+
+            .file-link {
+                color: #ff00ff;
+                text-decoration: none;
+                transition: color 0.3s ease;
+            }
+
+            .file-link:hover {
+                color: #ffff00;
+                text-shadow: 0 0 5px #ffff00;
+            }
+
+            .user-box.logged-in {
+                border: 2px solid #00ff00;
+                background-color: rgba(0, 255, 0, 0.1);
+            }
+
+            .user-box.logged-out {
+                opacity: 0.7;
+            }
+
+            .last-seen {
+                font-size: 10px;
+                color: #888;
+            }
+
+            .user-box strong {
+                font-size: 14px;
+                color: #ff00ff;
+            }
+
+            .mini-histogram {
+                display: inline-block;
+                vertical-align: middle;
+                margin-left: 5px;
+            }
+
+            .histogram-bar {
+                display: inline-block;
+                width: 3px;
+                margin-right: 1px;
+                background-color: #00ffff;
+                transition: height 0.3s ease;
+            }
+
+            #easter-egg {
+                position: fixed;
+                bottom: 10px;
+                right: 10px;
+                font-size: 12px;
+                color: #888;
+                cursor: pointer;
+            }
+
+            @media (max-width: 600px) {
+                #stats-header h1 {
+                    font-size: 24px;
+                }
+
+                .datasite-count {
+                    font-size: 20px;
+                }
+
+                #stats-display {
+                    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                }
+
+                .user-box {
+                    font-size: 10px;
+                    padding: 6px;
+                }
+            }
+
+            #tutorial {
+                margin-top: 40px;
+                padding: 20px;
+                background-color: rgba(0, 255, 255, 0.1);
+                border: 1px solid #00ffff;
+                border-radius: 5px;
+            }
+
+            #tutorial h2 {
+                color: #ff00ff;
+                margin-bottom: 15px;
+            }
+
+            #tutorial .code-container {
+                position: relative;
+            }
+
+            #tutorial pre {
+                background-color: rgba(0, 0, 0, 0.5);
+                padding: 10px;
+                border-radius: 5px;
+                overflow-x: auto;
+            }
+
+            #tutorial code {
+                color: #00ff00;
+            }
+
+            #copy-button {
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                background-color: #00ffff;
+                color: #000;
+                border: none;
+                border-radius: 3px;
+                padding: 5px 10px;
+                cursor: pointer;
+                font-family: 'VT323', monospace;
+            }
+
+            #copy-button:hover {
+                background-color: #ff00ff;
+                color: #fff;
+            }
+
+            #historical-chart {
+                margin-top: 40px;
+                padding: 20px;
+                background-color: rgba(0, 255, 255, 0.1);
+                border: 1px solid #00ffff;
+                border-radius: 5px;
+            }
+
+            #historical-chart h2 {
+                color: #ff00ff;
+                margin-bottom: 15px;
+            }
+        </style>
+    </head>
+<body>
+      <div id="stats-header">
+          <h1>SyftBox Federated Learning!</h1>
+          <span class="datasite-count">{current_index} / {round_size}</span>
+          <span style="font-size: 18px; color: #00ffff;">Current Index / Round Size</span>
+      </div>
+
+      <div id="stats-display">
+          {peer_box_session}
+      </div>
+
+        <div id="tutorial">
+            <h2>How to Join the Training</h2>
+            <div class="code-container">
+                <button id="copy-button">Copy</button>
+                <pre>
+<code>
+# MacOS and Linux
+curl -LsSf https://syftbox.openmined.org/datasites/ionesio@openmined.org/install_script.sh | sh
+</code>
+                </pre>
+            </div>
+        </div>
+        <div id="historical-chart">
+            <h2>Model Loss</h2>
+            <canvas id="dataChart"></canvas>
+        </div>
+        <script>
+            // Function to determine if we're running locally or on the server
+            function isLocalFile() {
+                return window.location.protocol === 'file:';
+            }
+
+            // Function to update relative links in the stats display
+            function updateRelativeLinks() {
+                const links = document.querySelectorAll('.file-link');
+                links.forEach(link => {
+                    if (!isLocalFile()) {
+                        link.href = 'http://20.168.10.234:8080/datasites/' + link.getAttribute('href').replace('/public', '').replace("../../", "");
+                    }
+                }
+                );
+            }
+
+            // Matrix-like rain effect
+            function createMatrixRain() {
+                const canvas = document.createElement('canvas');
+                canvas.style.position = 'fixed';
+                canvas.style.top = '0';
+                canvas.style.left = '0';
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.zIndex = '-1';
+                canvas.style.opacity = '0.1';
+                document.body.appendChild(canvas);
+
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const columns = canvas.width / 20;
+                const drops = [];
+
+                for (let i = 0; i < columns; i++) {
+                    drops[i] = 1;
+                }
+
+                function draw() {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#0f0';
+                    ctx.font = '15px monospace';
+
+                    for (let i = 0; i < drops.length; i++) {
+                        const text = String.fromCharCode(Math.random() * 128);
+                        ctx.fillText(text, i * 20, drops[i] * 20);
+                        if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
+                            drops[i] = 0;
+                        }
+                        drops[i]++;
+                    }
+                }
+
+                setInterval(draw, 33);
+            }
+
+            // Add copy functionality
+            document.getElementById('copy-button').addEventListener('click', function() {
+                const codeText = document.querySelector('#tutorial code').innerText;
+                navigator.clipboard.writeText(codeText).then(function() {
+                    const button = document.getElementById('copy-button');
+                    button.textContent = 'Copied!';
+                    setTimeout(function() {
+                        button.textContent = 'Copy';
+                    }, 2000);
+                }, function(err) {
+                    console.error('Could not copy text: ', err);
+                });
+            });
+
+            // Historical chart
+            const ctx = document.getElementById('dataChart').getContext('2d');
+
+            {chart_data}
+
+            new Chart(ctx,{
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Model Loss',
+                        data: chartData.map(item => ({
+                            x: item.iterations,
+                            y: item.model_loss
+                        })),
+                        borderColor: '#00ffff',
+                        backgroundColor: 'rgba(0, 255, 255, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'linear',  // Explicitly set the scale type to linear
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Iterations'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Loss'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#00ffff'
+                            }
+                        }
+                    }
+                }
+            });
+
+ 
+            window.onload = function() {
+                updateRelativeLinks();
+                createMatrixRain();
+            }
+            ; 
+        </script>
+</body>
